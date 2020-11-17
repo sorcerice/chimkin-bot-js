@@ -1,0 +1,33 @@
+{
+  "name": "chimkin-v2",
+  "version": "1.0.0",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./bot.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/opus": "^0.3.3",
+    "commando-provider-mongo": "^1.1.1",
+    "discord.js": "^12.4.1",
+    "discord.js-commando": "git+https://github.com/discordjs/Commando.git",
+    "dotenv": "^8.2.0",
+    "emoji-regex": "^9.2.0",
+    "mongodb": "^3.6.2",
+    "mongoose": "^5.10.13",
+    "ytdl-core": "^4.0.3"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sorcerice/chimkin-bot-js"
+  },
+  "bugs": {
+    "url": "https://github.com/sorcerice/chimkin-bot-js/issues"
+  },
+  "homepage": "https://github.com/sorcerice/chimkin-bot-js#readme",
+  "description": ""
+}
