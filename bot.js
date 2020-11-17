@@ -1,7 +1,7 @@
 require('dotenv').config()
 const path = require('path')
 
-const database = require('./database/database')
+// const database = require('./database/database')
 const MessageModel = require('./database/models/message')
 
 const Commando = require('discord.js-commando')
