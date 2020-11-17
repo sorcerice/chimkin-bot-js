@@ -39,7 +39,7 @@ module.exports = class Banned extends Command {
 					`${bannedUsersArray[i - 1].user.tag} || ID: ${
 						bannedUsersArray[i - 1].user.id
 					}`,
-					`${bannedUsersArray[i - 1].reason}`
+					`Reason: ${bannedUsersArray[i - 1].reason}`
 				)
 			}
 		} else {
