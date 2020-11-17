@@ -34,9 +34,9 @@ client.registry
 client.on('ready', () => {
 	console.log(`${client.user.tag} is now online!`)
 
-	database
-		.then(() => console.log('Connected to mongoDB'))
-		.catch(err => console.log(err))
+	// database
+	// 	.then(() => console.log('Connected to mongoDB'))
+	// 	.catch(err => console.log(err))
 })
 
 client.on('messageReactionAdd', async (reaction, user) => {
