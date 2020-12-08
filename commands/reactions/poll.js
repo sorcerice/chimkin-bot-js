@@ -157,24 +157,23 @@ module.exports = class CreatePollCommand extends (
 
 		if (pollChannelID) {
 			if ((reactionArray.length && optionArray.length) <= 12) {
-				let pollMsg = await message.guild.channels.cache
-					.get(pollChannelID[0])
-					.send(pollEmbed)
+				let pollChannel = message.guild.channels.cache.get(
+					pollChannelID[0]
+				)
 
-				try {
-					if (unicodeEmojis.length != 0) {
-						unicodeEmojis.forEach(emoji => pollMsg.react(emoji))
-					}
-					if (guildEmojis.length != 0) {
-						guildEmojis.forEach(emoji => pollMsg.react(emoji))
-					}
-					pollMsg.react('❌')
-				} catch (error) {
-					console.log(error)
-					message.reply(
-						"One of the reactions provided wasn't in this server"
-					)
+				let pollMsg = await pollChannel.send(pollEmbed)
+
+				if (unicodeEmojis.length != 0) {
+					unicodeEmojis.forEach(emoji => {
+						pollMsg.react(emoji)
+					})
 				}
+				if (guildEmojis.length != 0) {
+					guildEmojis.forEach(emoji => {
+						pollMsg.react(emoji)
+					})
+				}
+				pollMsg.react('❌')
 
 				let reactedUserIds = []
 
@@ -279,11 +278,11 @@ module.exports = class CreatePollCommand extends (
 								winningVote.forEach(reaction => {
 									if (reaction.emoji.id) {
 										winningEmojiOption.push(
-											`<:${reaction.emoji.name}:${reaction.emoji.id} -> ${reaction.option}`
+											`<:${reaction.emoji.name}:${reaction.emoji.id}> : ${reaction.option}`
 										)
 									} else {
 										winningEmojiOption.push(
-											`${reaction.emoji.name} -> ${reaction.option}`
+											`${reaction.emoji.name} : ${reaction.option}`
 										)
 									}
 								})
@@ -294,11 +293,11 @@ module.exports = class CreatePollCommand extends (
 								winningVote.forEach(reaction => {
 									if (reaction.emoji.id) {
 										winningEmojiOptions.push(
-											`<:${reaction.emoji.name}:${reaction.emoji.id} -> ${reaction.option}`
+											`<:${reaction.emoji.name}:${reaction.emoji.id} : ${reaction.option}`
 										)
 									} else {
 										winningEmojiOptions.push(
-											`${reaction.emoji.name} -> ${reaction.option}`
+											`${reaction.emoji.name} : ${reaction.option}`
 										)
 									}
 								})
