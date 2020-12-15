@@ -155,198 +155,227 @@ module.exports = class CreatePollCommand extends (
 			}
 		})
 
-		if (pollChannelID) {
-			if ((reactionArray.length && optionArray.length) <= 12) {
-				let pollChannel = message.guild.channels.cache.get(
-					pollChannelID[0]
-				)
+		try {
+			if (pollChannelID) {
+				if ((reactionArray.length && optionArray.length) <= 12) {
+					let pollChannel = message.guild.channels.cache.get(
+						pollChannelID[0]
+					)
 
-				let pollMsg = await pollChannel.send(pollEmbed)
+					let pollMsg = await pollChannel.send(pollEmbed)
 
-				if (unicodeEmojis.length != 0) {
-					unicodeEmojis.forEach(emoji => {
-						pollMsg.react(emoji)
+					if (unicodeEmojis.length != 0) {
+						unicodeEmojis.forEach(emoji => {
+							pollMsg.react(emoji).catch(err => {
+								console.log('Unicode reaction add failed')
+							})
+						})
+					}
+					if (guildEmojis.length != 0) {
+						guildEmojis.forEach(emoji => {
+							pollMsg.react(emoji).catch(err => {
+								console.log('Guild reaction add failed')
+							})
+						})
+					}
+					pollMsg.react('❌').catch(err => {
+						console.log('Cancel reaction add failed')
 					})
-				}
-				if (guildEmojis.length != 0) {
-					guildEmojis.forEach(emoji => {
-						pollMsg.react(emoji)
-					})
-				}
-				pollMsg.react('❌')
 
-				let reactedUserIds = []
+					let reactedUserIds = []
 
-				const reactionCollector = pollMsg.createReactionCollector(
-					(reaction, user) => {
-						if (user.bot) return false
+					const reactionCollector = pollMsg.createReactionCollector(
+						(reaction, user) => {
+							if (user.bot) return false
+							if (
+								reaction.emoji.name === '❌' &&
+								user.id === message.author.id
+							)
+								return true
+							if (
+								reactedUserIds.some(
+									reactedId => reactedId === user.id
+								)
+							)
+								return false
+							if (
+								unicodeEmojis.some(
+									emoji => emoji === reaction.emoji.name
+								)
+							)
+								return true
+							if (
+								guildEmojis.some(
+									emoji => emoji.name === reaction.emoji.name
+								)
+							)
+								return true
+						},
+						{ time: pollDuration, dispose: true }
+					)
+
+					reactionCollector.on('collect', (reaction, user) => {
+						reactedUserIds.push(user.id)
 						if (
 							reaction.emoji.name === '❌' &&
 							user.id === message.author.id
 						)
-							return true
-						if (
-							reactedUserIds.some(
-								reactedId => reactedId === user.id
-							)
-						)
-							return false
-						if (
-							unicodeEmojis.some(
-								emoji => emoji === reaction.emoji.name
-							)
-						)
-							return true
-						if (
-							guildEmojis.some(
-								emoji => emoji.name === reaction.emoji.name
-							)
-						)
-							return true
-					},
-					{ time: pollDuration, dispose: true }
-				)
-
-				reactionCollector.on('collect', (reaction, user) => {
-					reactedUserIds.push(user.id)
-					if (
-						reaction.emoji.name === '❌' &&
-						user.id === message.author.id
-					)
-						reactionCollector.stop()
-				})
-
-				reactionCollector.on('remove', (reaction, user) => {
-					reactedUserIds.splice(reactedUserIds.indexOf(user.id), 1)
-					reaction.users.cache.delete(user.id)
-				})
-
-				reactionCollector.on('end', collectedReactions => {
-					collectedReactions.delete('❌')
-					reactionOptionArray.forEach(reactionOption => {
-						let reaction = reactionOption.split(/\s+/g)[0]
-						let option = reactionOption.match(/\s+.+/g)[0]
-						if (reaction.match(emojiRegex())) {
-							let reactionID = reaction.match(emojiRegex())[0]
-							if (collectedReactions.has(reactionID)) {
-								collectedReactions.forEach(reaction => {
-									if (reaction.emoji.name === reactionID) {
-										reaction.option = option
-										reaction.voteCount =
-											reaction.users.cache.size - 1
-									}
-								})
-							}
-						} else if (reaction.match(/\d{18}/g)) {
-							let reactionID = reaction.match(/\d{18}/g)[0]
-							if (collectedReactions.has(reactionID)) {
-								collectedReactions.forEach(reaction => {
-									if (reaction.emoji.id === reactionID) {
-										reaction.option = option
-										reaction.voteCount =
-											reaction.users.cache.size - 1
-									}
-								})
-							}
-						}
+							reactionCollector.stop()
 					})
 
-					const date = new Date()
-
-					const getPollWinner = collectedReactions => {
-						let voteCountArray = []
-						collectedReactions.forEach(reaction =>
-							voteCountArray.push(reaction.voteCount)
+					reactionCollector.on('remove', (reaction, user) => {
+						reactedUserIds.splice(
+							reactedUserIds.indexOf(user.id),
+							1
 						)
+						reaction.users.cache.delete(user.id)
+					})
 
-						if (voteCountArray.length === 0) {
-							return 'It seems like this poll was absolutely useless and not a living soul on this server has voted.\n **Thanks for wasting my time!**\n\nSincerely,\n**Chimkin**'
-						} else {
-							let winningVoteCount = voteCountArray.reduce(
-								(a, b) => {
-									return Math.max(a, b)
+					reactionCollector.on('end', collectedReactions => {
+						collectedReactions.delete('❌')
+						reactionOptionArray.forEach(reactionOption => {
+							let reaction = reactionOption.split(/\s+/g)[0]
+							let option = reactionOption.match(/\s+.+/g)[0]
+							if (reaction.match(emojiRegex())) {
+								let reactionID = reaction.match(emojiRegex())[0]
+								if (collectedReactions.has(reactionID)) {
+									collectedReactions.forEach(reaction => {
+										if (
+											reaction.emoji.name === reactionID
+										) {
+											reaction.option = option
+											reaction.voteCount =
+												reaction.users.cache.size - 1
+										}
+									})
 								}
+							} else if (reaction.match(/\d{18}/g)) {
+								let reactionID = reaction.match(/\d{18}/g)[0]
+								if (collectedReactions.has(reactionID)) {
+									collectedReactions.forEach(reaction => {
+										if (reaction.emoji.id === reactionID) {
+											reaction.option = option
+											reaction.voteCount =
+												reaction.users.cache.size - 1
+										}
+									})
+								}
+							}
+						})
+
+						const date = new Date()
+
+						const getPollWinner = collectedReactions => {
+							let voteCountArray = []
+							collectedReactions.forEach(reaction =>
+								voteCountArray.push(reaction.voteCount)
 							)
-							let winningVote = collectedReactions.filter(
-								reaction =>
-									reaction.voteCount === winningVoteCount
-							)
 
-							if (winningVote.size === 1) {
-								let winningEmojiOption = []
-
-								winningVote.forEach(reaction => {
-									if (reaction.emoji.id) {
-										winningEmojiOption.push(
-											`<:${reaction.emoji.name}:${reaction.emoji.id}> : ${reaction.option}`
-										)
-									} else {
-										winningEmojiOption.push(
-											`${reaction.emoji.name} : ${reaction.option}`
-										)
-									}
-								})
-
-								return `The poll has ended!\nThe winning option was **${winningEmojiOption[0]}** with **${winningVoteCount}** vote/s`
+							if (voteCountArray.length === 0) {
+								return 'It seems like this poll was absolutely useless and not a living soul on this server has voted.\n **Thanks for wasting my time!**\n\nSincerely,\n**Chimkin**'
 							} else {
-								let winningEmojiOptions = []
-								winningVote.forEach(reaction => {
-									if (reaction.emoji.id) {
-										winningEmojiOptions.push(
-											`<:${reaction.emoji.name}:${reaction.emoji.id} : ${reaction.option}`
-										)
-									} else {
-										winningEmojiOptions.push(
-											`${reaction.emoji.name} : ${reaction.option}`
-										)
+								let winningVoteCount = voteCountArray.reduce(
+									(a, b) => {
+										return Math.max(a, b)
 									}
-								})
+								)
+								let winningVote = collectedReactions.filter(
+									reaction =>
+										reaction.voteCount === winningVoteCount
+								)
 
-								const tieBreaker = winningEmojiOptions => {
-									return winningEmojiOptions[
-										Math.floor(
-											Math.random() *
-												Math.floor(
-													winningEmojiOptions.length
-												)
-										)
-									]
+								if (winningVote.size === 1) {
+									let winningEmojiOption = []
+
+									winningVote.forEach(reaction => {
+										if (reaction.emoji.id) {
+											winningEmojiOption.push(
+												`<:${reaction.emoji.name}:${reaction.emoji.id}> : ${reaction.option}`
+											)
+										} else {
+											winningEmojiOption.push(
+												`${reaction.emoji.name} : ${reaction.option}`
+											)
+										}
+									})
+
+									return `The poll has ended!\nThe winning option was **${winningEmojiOption[0]}** with **${winningVoteCount}** vote/s`
+								} else {
+									let winningEmojiOptions = []
+									winningVote.forEach(reaction => {
+										if (reaction.emoji.id) {
+											winningEmojiOptions.push(
+												`<:${reaction.emoji.name}:${reaction.emoji.id} : ${reaction.option}`
+											)
+										} else {
+											winningEmojiOptions.push(
+												`${reaction.emoji.name} : ${reaction.option}`
+											)
+										}
+									})
+
+									const tieBreaker = winningEmojiOptions => {
+										return winningEmojiOptions[
+											Math.floor(
+												Math.random() *
+													Math.floor(
+														winningEmojiOptions.length
+													)
+											)
+										]
+									}
+
+									return `The poll has ended!\nThere was a tie between \n\n**${winningEmojiOptions.join(
+										'\n'
+									)}**\nwith **${winningVoteCount}** vote/s\n\n*Chimkin tie breaker chooses:* \n**${tieBreaker(
+										winningEmojiOptions
+									)}**\n*as the winner*`
 								}
-
-								return `The poll has ended!\nThere was a tie between \n\n**${winningEmojiOptions.join(
-									'\n'
-								)}**\nwith **${winningVoteCount}** vote/s\n\n*Chimkin tie breaker chooses:* \n**${tieBreaker(
-									winningEmojiOptions
-								)}**\n*as the winner*`
 							}
 						}
-					}
 
-					const pollResultsEmbed = new MessageEmbed({
-						title: question,
-						thumbnail: {
-							url: gifURL,
-						},
-						author: {
-							name: message.author.name,
-							iconURL: message.author.avatarURL(),
-						},
-						description: getPollWinner(collectedReactions),
-						footer: {
-							text: `Poll ended on ${date.toUTCString()}`,
-							iconURL: message.guild.iconURL(),
-						},
+						const pollResultsEmbed = new MessageEmbed({
+							title: question,
+							thumbnail: {
+								url: gifURL,
+							},
+							author: {
+								name: message.author.name,
+								iconURL: message.author.avatarURL(),
+							},
+							description: getPollWinner(collectedReactions),
+							footer: {
+								text: `Poll ended on ${date.toUTCString()}`,
+								iconURL: message.guild.iconURL(),
+							},
+						})
+
+						pollMsg.edit(pollResultsEmbed)
 					})
-
-					pollMsg.edit(pollResultsEmbed)
-				})
+				} else {
+					message.channel.send(
+						'You cannot have more that 12 options for the poll.'
+					)
+				}
 			} else {
-				message.channel.send(
-					'You cannot have more that 12 options for the poll.'
-				)
+				message.channel.send('The mentioned channel does not exist')
 			}
-		} else {
-			message.channel.send('The mentioned channel does not exist')
+		} catch (err) {
+			if (err instanceof TypeError) {
+				let pollChannelGet = message.guild.channels.cache.get(
+					pollChannel.match(/\d{18}/g)[0]
+				)
+				pollChannelGet.messages.cache.forEach(m => {
+					if (m.embeds) {
+						m.delete({ timeout: 500 })
+					}
+				})
+				message.channel.send(
+					'I cannot access emojis from another server.\n Try again with emojis from this server or use unicode emojis.'
+				)
+			} else {
+				console.log(err)
+			}
 		}
 	}
 }
